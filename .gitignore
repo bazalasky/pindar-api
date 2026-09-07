@@ -54,3 +54,11 @@ pids
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+/generated/prisma
+
+# AI agent skill bundles (auto-installed, regenerable from skills-lock.json)
+/.agents
+/.claude
+/.windsurf
+skills-lock.json
