@@ -4,9 +4,10 @@
 // Get a free hosted Postgres database in seconds: `npx create-db`
 
 generator client {
-  provider               = "prisma-client"
-  output                 = "../generated/prisma"
-  moduleFormat           = "cjs"
+  provider     = "prisma-client"
+  output       = "../generated/prisma"
+  moduleFormat = "cjs"
+  importFileExtension = ""
 }
 
 datasource db {
@@ -14,63 +15,71 @@ datasource db {
 }
 
 model Activity {
-  id  Int @id @default(autoincrement()) 
-  activityType Type
-  liftActivity LiftActivity?
-  RunActivity RunActivity?
-  date DateTime @default(now())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  duration Decimal
-  notes String?
-  bodyweight Decimal
-  user User @relation(fields: [userId], references: [id])
-  userId Int
-  source String
-  externalId String?
-  rawPayload Json?
+  id              Int           @id @default(autoincrement())
+  activityType    Type
+  liftActivity    LiftActivity?
+  runActivity     RunActivity?
+  date            DateTime      @db.Date
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  durationSeconds Int
+  notes           String?
+  bodyweight      Decimal? // lbs
+  user            User          @relation(fields: [userId], references: [id])
+  userId          Int
+  source          String        @default("manual")
+  externalId      String?
+  rawPayload      Json?
+
   @@unique([source, externalId])
+  @@index([userId, date])
 }
 
 model LiftActivity {
-  activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
-  activityId Int @id
-  sets Set[]
+  activity   Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  activityId Int      @id
+  sets       Set[]
 }
 
 model RunActivity {
-  activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
-  activityId Int @id
-  distance Decimal @default(0)
-  pace Decimal @default(0)
-  elevation Int @default(0)
-  heartRate Int?
+  activity   Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  activityId Int      @id
+  distance   Decimal? // miles
+  elevation  Int      @default(0) // feet
+  heartRate  Int? // bpm
 }
 
 model Exercise {
-  id  Int @id @default(autoincrement())
-  name String
-  sets Set[]
+  id     Int    @id @default(autoincrement())
+  userId Int
+  user   User   @relation(fields: [userId], references: [id])
+  name   String
+  sets   Set[]
+
+  @@unique([userId, name])
 }
 
 model Set {
-  id  Int @id @default(autoincrement())
-  exercise Exercise @relation(fields: [exerciseId], references: [id])
-  exerciseId Int
-  liftActivity LiftActivity @relation(fields: [liftActivityId], references: [activityId], onDelete: Cascade)
+  id             Int          @id @default(autoincrement())
+  exercise       Exercise     @relation(fields: [exerciseId], references: [id])
+  exerciseId     Int
+  liftActivity   LiftActivity @relation(fields: [liftActivityId], references: [activityId], onDelete: Cascade)
   liftActivityId Int
-  weight Decimal?
-  reps Int @default(1)
-  rpe Int?
-  order Int
+  weight         Decimal? // lbs
+  reps           Int          @default(1)
+  rpe            Decimal?
+  setNumber      Int
+
+  @@unique([liftActivityId, setNumber])
 }
 
 model User {
-  id Int @id @default(autoincrement())
+  id         Int        @id @default(autoincrement())
   activities Activity[]
-  name String
-  email String @unique
-  password String
+  name       String
+  email      String     @unique
+  password   String
+  exercises  Exercise[]
 }
 
 enum Type {
