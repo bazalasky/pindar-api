@@ -1,6 +1,6 @@
 import { plainToInstance } from 'class-transformer';
 import {
-    IsNotEmpty,
+  IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,

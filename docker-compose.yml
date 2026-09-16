@@ -1,0 +1,17 @@
+name: pindar-testing
+
+services:
+  db:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: "BradyTesting"
+      POSTGRES_PASSWORD: "Testing123!"
+      POSTGRES_DB: "pindar_testing"
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "BradyTesting"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    container_name: pindar-testing-db

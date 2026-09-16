@@ -84,6 +84,23 @@ Each of these has already cost real debugging time.
    formatting it with local-time methods renders the previous day.
 7. **zsh appends a trailing `%`** to copy-pasted terminal output that didn't end in a newline.
    Easy to paste into `.env` alongside a token or a Neon connection string without noticing.
+8. **Pin `@nestjs/*` satellite packages to match core (v11).** The v12 line of `@nestjs/jwt`,
+   `@nestjs/passport` and `@nestjs/config` is **ESM-only** (`"type": "module"`, no `require`
+   export condition). This project is CommonJS, and it works in production only because Node
+   26 supports `require()` of ESM - but jest's CJS runtime does not, so an unpinned
+   `npm install @nestjs/something` breaks the test suite while production stays green. Known
+   good: `@nestjs/jwt@^11`, `@nestjs/passport@^11`, and `@nestjs/config@^4` (config has **no**
+   v11 - it went `4.0.4` straight to `12.0.0`, realigning with core, so `@^11` finds nothing).
+   To audit, scan `node_modules/<dep>/package.json` for `"type": "module"` across direct deps.
+9. **E2E tests need `NODE_OPTIONS=--experimental-vm-modules`.** Prisma 7's client engine loads
+   its WASM query compiler via a dynamic `import()`, which jest cannot do otherwise. It is set
+   in the `test:e2e` script. That syntax is macOS/Linux only; `cross-env` if Windows ever
+   matters.
+10. **A booting app proves nothing about the database.** Prisma driver adapters connect
+    lazily, so `$connect()` in `onModuleInit` opens no socket. Verified directly: the E2E suite
+    passed with the test container stopped. This is the same failure that let a missing
+    `DATABASE_URL` deploy green to Render. Any test meant to prove DB wiring must issue a real
+    query - the bogus-user login returning 401 is the cheapest one.
 
 ## Deployment
 
