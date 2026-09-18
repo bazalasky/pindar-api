@@ -101,6 +101,43 @@ Each of these has already cost real debugging time.
     passed with the test container stopped. This is the same failure that let a missing
     `DATABASE_URL` deploy green to Render. Any test meant to prove DB wiring must issue a real
     query - the bogus-user login returning 401 is the cheapest one.
+11. **Never accept an editor auto-import that isn't relative.** `baseUrl: "./"` makes VS Code
+    prefer `'src/prisma/prisma.service'` over `'../prisma/prisma.service'`. `tsc` resolves it
+    and jest does not, so it typechecks clean and then fails at runtime with `Cannot find
+    module`. Hit twice so far. Its cousin is an auto-import of a deep `node_modules/...` path
+    instead of the package name. **A clean `tsc --noEmit` says nothing about whether a module
+    resolves** - or, separately, about whether it is wired in: unreferenced code compiles fine,
+    which is why `ActivitiesModule` typechecked before `AppModule` imported it.
+12. **`nest g <thing> <name>` creates a folder named `<name>` inside the target directory.**
+    Running it when `src/activities/` already exists produces `src/activities/activities/`,
+    which also stops the CLI adding the import to `AppModule`. Check the resulting paths.
+13. **prisma.io/docs now serves Prisma 8; this project is on 7.9.1.** v8 documents a chained
+    fluent API (`db.orm.public.User.include("posts").all()`) that **does not exist** in the
+    generated client here - v7 uses object literals (`prisma.user.findMany({ include: { posts:
+    true } })`). There is no version switcher on the site. Two reliable v7 references instead:
+    `backend/.claude/skills/prisma-client-api/` (pinned `version: "7.9.1"`, with
+    `references/query-options.md` for include/select/orderBy), and the generated types under
+    `generated/prisma/`, which are authoritative for exactly what is installed. Do not link
+    prisma.io docs without checking which version the page describes.
+14. **Editing `schema.prisma` does not change any database.** A migration has to be generated
+    *and* applied, per environment. This silently failed for ten days in Phase 2: the entire
+    schema revision existed only in `schema.prisma`, while dev, test and prod all still ran the
+    Phase 1 schema. The generated client matched the schema, so nothing complained until code
+    first queried a drifted column. **After any schema edit, verify with
+    `prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma`** and expect
+    "No difference detected" - against dev (`.env`), test (`DOTENV_CONFIG_PATH=.env.test`) and
+    prod (`DATABASE_URL='<prod>'`) separately. Note `--from-url` was removed in v7; use
+    `--from-config-datasource`. Generate migrations against the **local container**
+    (`DOTENV_CONFIG_PATH=.env.test npx prisma migrate dev --name <name>`): `migrate dev` needs a
+    shadow database it can create and drop, which local Postgres allows and Neon's role often
+    does not.
+15. **`undefined` in a Prisma `where` means "omit this condition", not "match nothing".**
+    `count({ where: { id: { in: [1] }, userId: undefined } })` drops the `userId` filter
+    entirely and matches the row whoever owns it. Demonstrated 2026-09-18: an undecorated
+    `userId` handler parameter (Nest injects nothing into params without a decorator, so it is
+    `undefined`) silently disabled the exercise ownership check. `null` is different again - it
+    means `IS NULL`. Any security filter built from a value that could be `undefined` needs that
+    value guaranteed upstream.
 
 ## Deployment
 
