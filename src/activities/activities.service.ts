@@ -23,27 +23,36 @@ export class ActivitiesService {
     );
     const date = new Date(dto.date);
     const activityType = Type.Lift;
-    const lift = await this.prisma.activity.create({
-      data: {
-        user: {
-          connect: { id: userId },
-        },
-        date,
-        activityType,
-        durationSeconds: dto.durationSeconds,
-        notes: dto.notes,
-        bodyweight: dto.bodyweight,
-        liftActivity: {
-          create: {
-            sets: {
-              create: dto.sets,
+    try {
+      return await this.prisma.activity.create({
+        data: {
+          user: {
+            connect: { id: userId },
+          },
+          date,
+          activityType,
+          durationSeconds: dto.durationSeconds,
+          notes: dto.notes,
+          bodyweight: dto.bodyweight,
+          liftActivity: {
+            create: {
+              sets: {
+                create: dto.sets,
+              },
             },
           },
         },
-      },
-      include: ACTIVITY_INCLUDE,
-    });
-    return lift;
+        include: ACTIVITY_INCLUDE,
+      });
+    } catch (e) {
+      if (
+        e instanceof Prisma.PrismaClientKnownRequestError &&
+        e.code === 'P2002'
+      ) {
+        throw new BadRequestException('Duplicate set number in this activity');
+      }
+      throw e;
+    }
   }
 
   async findAll() {

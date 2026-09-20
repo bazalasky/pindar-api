@@ -138,6 +138,12 @@ Each of these has already cost real debugging time.
     `undefined`) silently disabled the exercise ownership check. `null` is different again - it
     means `IS NULL`. Any security filter built from a value that could be `undefined` needs that
     value guaranteed upstream.
+16. **Never import `describe`/`it`/`expect` from `node:test`.** They are jest globals already in
+    scope; an editor auto-import silently swaps the test runner. Symptom seen 2026-09-20: jest
+    reports "Your test suite must contain at least one test" while a `node:test`-formatted
+    report shows every test failing with `Cannot read properties of undefined` - because
+    `node:test` ran the callbacks without jest's `beforeAll`, leaving `app` and `prisma`
+    unassigned. One stray import line, no type error.
 
 ## Deployment
 
