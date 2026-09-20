@@ -47,7 +47,7 @@ describe('Activities (e2e)', () => {
     const { exercise, token } = await seedUserWithExercise();
 
     await request(app.getHttpServer())
-      .post('/activities')
+      .post('/activities/lift')
       .set('Authorization', `Bearer ${token}`)
       .send({
         date: '2026-09-18',
@@ -75,7 +75,7 @@ describe('Activities (e2e)', () => {
     const { exercise } = await seedUserWithExercise();
 
     await request(app.getHttpServer())
-      .post('/activities')
+      .post('/activities/lift')
       .send({
         date: '2026-09-18',
         durationSeconds: 3600,
@@ -98,7 +98,7 @@ describe('Activities (e2e)', () => {
     const { exercise, token } = await seedUserWithExercise();
 
     const res = await request(app.getHttpServer())
-      .post('/activities')
+      .post('/activities/lift')
       .set('Authorization', `Bearer ${token}`)
       .send({
         date: '2026-09-18',
@@ -136,7 +136,7 @@ describe('Activities (e2e)', () => {
     const { exercise, token } = await seedUserWithExercise();
 
     await request(app.getHttpServer())
-      .post('/activities')
+      .post('/activities/lift')
       .set('Authorization', `Bearer ${token}`)
       .send({
         date: '2026-09-18',
@@ -161,7 +161,7 @@ describe('Activities (e2e)', () => {
     const { exercise, token } = await seedUserWithExercise();
 
     await request(app.getHttpServer())
-      .post('/activities')
+      .post('/activities/lift')
       .set('Authorization', `Bearer ${token}`)
       .send({
         date: '2026-09-18',
@@ -187,7 +187,7 @@ describe('Activities (e2e)', () => {
       await seedUserWithExercise('test2@example.com');
 
     await request(app.getHttpServer())
-      .post('/activities')
+      .post('/activities/lift')
       .set('Authorization', `Bearer ${token1}`)
       .send({
         date: '2026-09-18',
@@ -215,7 +215,7 @@ describe('Activities (e2e)', () => {
     const { exercise, token } = await seedUserWithExercise();
 
     await request(app.getHttpServer())
-      .post('/activities')
+      .post('/activities/lift')
       .set('Authorization', `Bearer ${token}`)
       .send({
         date: '2026-09-18',

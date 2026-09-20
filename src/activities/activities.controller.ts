@@ -23,7 +23,7 @@ interface AuthenticatedRequest extends Request {
 export class ActivitiesController {
   constructor(private readonly activitiesService: ActivitiesService) {}
 
-  @Post()
+  @Post('lift')
   @UseGuards(AuthGuard('jwt'))
   async createLift(
     @Req() req: AuthenticatedRequest,
