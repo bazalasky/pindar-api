@@ -7,6 +7,8 @@ import { CreateLiftActivityDto } from './dto/create-lift-activity.dto';
 import { CreateRunActivityDto } from './dto/create-run-activity.dto';
 import { Prisma, Type } from '../../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { UpdateLiftActivityDto } from './dto/update-lift-activity.dto';
+import { UpdateRunActivityDto } from './dto/update-run-activity.dto';
 
 const ACTIVITY_INCLUDE = {
   liftActivity: { include: { sets: { include: { exercise: true } } } },
@@ -100,6 +102,62 @@ export class ActivitiesService {
     return activity;
   }
 
+  async updateLift(userId: number, id: number, dto: UpdateLiftActivityDto) {
+    await this.assertActivityOwnedBy(userId, id, Type.Lift);
+    if (dto.sets) {
+      await this.assertExercisesBelongToUser(
+        userId,
+        dto.sets.map((s) => s.exerciseId),
+      );
+    }
+    return await this.prisma.activity.update({
+      where: { id },
+      data: {
+        date: dto.date ? new Date(dto.date) : undefined,
+        durationSeconds: dto.durationSeconds,
+        notes: dto.notes,
+        bodyweight: dto.bodyweight,
+        liftActivity: dto.sets
+          ? {
+              update: {
+                sets: {
+                  deleteMany: {},
+                  create: dto.sets,
+                },
+              },
+            }
+          : undefined,
+      },
+      include: ACTIVITY_INCLUDE,
+    });
+  }
+
+  async updateRun(userId: number, id: number, dto: UpdateRunActivityDto) {
+    await this.assertActivityOwnedBy(userId, id, Type.Run);
+    return await this.prisma.activity.update({
+      where: { id },
+      data: {
+        date: dto.date ? new Date(dto.date) : undefined,
+        durationSeconds: dto.durationSeconds,
+        notes: dto.notes,
+        bodyweight: dto.bodyweight,
+        runActivity: {
+          update: {
+            distance: dto.distance,
+            elevation: dto.elevation,
+            heartRate: dto.heartRate,
+          },
+        },
+      },
+      include: ACTIVITY_INCLUDE,
+    });
+  }
+
+  async remove(userId: number, id: number) {
+    await this.assertActivityOwnedBy(userId, id);
+    await this.prisma.activity.delete({ where: { id } });
+  }
+
   private async assertExercisesBelongToUser(
     userId: number,
     exerciseIds: number[],
@@ -113,5 +171,24 @@ export class ActivitiesService {
         'One or more exercises do not belong to the user',
       );
     }
+  }
+
+  private async assertActivityOwnedBy(
+    userId: number,
+    id: number,
+    expectedType?: Type,
+  ) {
+    const res = await this.prisma.activity.findUnique({
+      select: { id: true, userId: true, activityType: true },
+      where: { id },
+    });
+    if (
+      !res ||
+      res.userId !== userId ||
+      (expectedType && res.activityType !== expectedType)
+    ) {
+      throw new NotFoundException('Activity not found');
+    }
+    return res;
   }
 }

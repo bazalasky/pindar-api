@@ -84,7 +84,7 @@ describe('Activities (e2e)', () => {
         bodyweight: '180.5',
         distance: '3.1',
         elevation: 100,
-        heartRate: 150
+        heartRate: 150,
       })
       .expect(201);
 
@@ -117,7 +117,7 @@ describe('Activities (e2e)', () => {
       })
       .expect(201);
 
-      await request(app.getHttpServer())
+    await request(app.getHttpServer())
       .post('/activities/run')
       .set('Authorization', `Bearer ${token}`)
       .send({
@@ -127,29 +127,29 @@ describe('Activities (e2e)', () => {
         bodyweight: '180.5',
         distance: '3.1',
         elevation: 100,
-        heartRate: 150
+        heartRate: 150,
       })
       .expect(201);
 
-      const res = await request(app.getHttpServer())
+    const res = await request(app.getHttpServer())
       .get('/activities')
       .expect(200);
 
-      expect(res.body).toHaveLength(2);
+    expect(res.body).toHaveLength(2);
 
-      const lift = res.body.find((a) => a.activityType === 'Lift');
-      const run = res.body.find((a) => a.activityType === 'Run');
+    const lift = res.body.find((a) => a.activityType === 'Lift');
+    const run = res.body.find((a) => a.activityType === 'Run');
 
-      expect(lift.liftActivity).not.toBeNull();
-      expect(lift.runActivity).toBeNull();
-      expect(run.runActivity).not.toBeNull();
-      expect(run.liftActivity).toBeNull();
+    expect(lift.liftActivity).not.toBeNull();
+    expect(lift.runActivity).toBeNull();
+    expect(run.runActivity).not.toBeNull();
+    expect(run.liftActivity).toBeNull();
   });
 
   it('/activities/run (POST) with empty optionals', async () => {
-      const { token } = await seedUserWithExercise();
+    const { token } = await seedUserWithExercise();
 
-      const res = await request(app.getHttpServer())
+    const res = await request(app.getHttpServer())
       .post('/activities/run')
       .set('Authorization', `Bearer ${token}`)
       .send({
@@ -160,9 +160,9 @@ describe('Activities (e2e)', () => {
       })
       .expect(201);
 
-      expect(res.body.runActivity.distance).toBe(null);
-      expect(res.body.runActivity.elevation).toBe(0);
-      expect(res.body.runActivity.heartRate).toBe(null);
+    expect(res.body.runActivity.distance).toBe(null);
+    expect(res.body.runActivity.elevation).toBe(0);
+    expect(res.body.runActivity.heartRate).toBe(null);
   });
 
   it('/activities/lift (POST) with missing auth', async () => {
@@ -201,9 +201,9 @@ describe('Activities (e2e)', () => {
   });
 
   it('/activities/run (POST) invalid field', async () => {
-      const { token } = await seedUserWithExercise();
+    const { token } = await seedUserWithExercise();
 
-      await request(app.getHttpServer())
+    await request(app.getHttpServer())
       .post('/activities/run')
       .set('Authorization', `Bearer ${token}`)
       .send({
@@ -213,7 +213,7 @@ describe('Activities (e2e)', () => {
         bodyweight: '180.5',
         distance: '3.1',
         elevation: 0,
-        heartRate: 'abc'
+        heartRate: 'abc',
       })
       .expect(400);
   });
