@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { CreateLiftActivityDto } from './dto/create-lift-activity.dto';
+import { CreateRunActivityDto } from './dto/create-run-activity.dto';
 import { Prisma, Type } from '../../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -53,6 +54,31 @@ export class ActivitiesService {
       }
       throw e;
     }
+  }
+
+  async createRun(userId: number, dto: CreateRunActivityDto) {
+    const date = new Date(dto.date);
+    const activityType = Type.Run;
+    return await this.prisma.activity.create({
+      data: {
+        user: {
+          connect: { id: userId },
+        },
+        date,
+        activityType,
+        durationSeconds: dto.durationSeconds,
+        notes: dto.notes,
+        bodyweight: dto.bodyweight,
+        runActivity: {
+          create: {
+            distance: dto.distance,
+            elevation: dto.elevation,
+            heartRate: dto.heartRate,
+          },
+        },
+      },
+      include: ACTIVITY_INCLUDE,
+    });
   }
 
   async findAll() {
