@@ -43,6 +43,35 @@ describe('Activities (e2e)', () => {
     return { user, exercise, token };
   }
 
+  async function postLift(exercise: { id: number }, token: string) {
+    return await request(app.getHttpServer())
+      .post('/activities/lift')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        date: '2026-09-18',
+        durationSeconds: 3600,
+        notes: 'felt good',
+        bodyweight: '180.5',
+        sets: [
+          {
+            exerciseId: exercise.id,
+            setNumber: 1,
+            reps: 5,
+            weight: '225.5',
+            rpe: '8.5',
+          },
+          {
+            exerciseId: exercise.id,
+            setNumber: 2,
+            reps: 5,
+            weight: '225.5',
+            rpe: '8.5',
+          },
+        ],
+      })
+      .expect(201);
+  }
+
   it('/activities/lift (POST)', async () => {
     const { exercise, token } = await seedUserWithExercise();
 
@@ -368,6 +397,120 @@ describe('Activities (e2e)', () => {
     expect(await prisma.activity.count()).toBe(0);
     expect(await prisma.liftActivity.count()).toBe(0);
     expect(await prisma.set.count()).toBe(0);
+  });
+
+  it('activities/lift (PATCH) omitting sets leaves them intact', async () => {
+    const { exercise, token } = await seedUserWithExercise();
+
+    const lift = await postLift(exercise, token);
+
+    const res = await request(app.getHttpServer())
+      .patch(`/activities/lift/${lift.body.id}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        notes: 'updating lift',
+      })
+      .expect(200);
+
+    expect(await prisma.set.count()).toBe(2);
+    expect(res.body.notes).toBe('updating lift');
+  });
+
+  it('activities/lift (PATCH) including sets replaces them', async () => {
+    const { exercise, token } = await seedUserWithExercise();
+
+    const lift = await postLift(exercise, token);
+
+    const res = await request(app.getHttpServer())
+      .patch(`/activities/lift/${lift.body.id}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        notes: 'updating lift',
+        sets: [
+          {
+            exerciseId: exercise.id,
+            setNumber: 1,
+            reps: 10,
+            weight: '225.5',
+            rpe: '8.5',
+          },
+        ],
+      })
+      .expect(200);
+
+    expect(await prisma.set.count()).toBe(1);
+    expect(res.body.notes).toBe('updating lift');
+  });
+
+  it('activities/lift (PATCH) editing another users activity returns 404', async () => {
+    const { exercise: exercise1, token: token1 } =
+      await seedUserWithExercise('test1@example.com');
+    const { token: token2 } = await seedUserWithExercise('test2@example.com');
+
+    const lift = await postLift(exercise1, token1);
+
+    const res = await request(app.getHttpServer())
+      .patch(`/activities/lift/${lift.body.id}`)
+      .set('Authorization', `Bearer ${token2}`)
+      .send({
+        notes: 'updating lift',
+      })
+      .expect(404);
+
+    expect(await res.body.notes).toBe('felt good');
+  });
+
+  it('activities/lift (PATCH) editing run id on lift route returns 404', async () => {
+    const { token } = await seedUserWithExercise();
+
+    const run = await request(app.getHttpServer())
+      .post('/activities/run')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        date: '2026-09-18',
+        durationSeconds: 1800,
+        notes: 'felt good',
+        bodyweight: '180.5',
+      })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .patch(`/activities/lift/${run.body.id}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        notes: 'updating lift',
+      })
+      .expect(404);
+  });
+
+  it('activities/id (DELETE) delete activity', async () => {
+    const { exercise, token } = await seedUserWithExercise();
+
+    const lift = await postLift(exercise, token);
+
+    await request(app.getHttpServer())
+      .delete(`/activities/${lift.body.id}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(204);
+
+    expect(await prisma.activity.count()).toBe(0);
+    expect(await prisma.liftActivity.count()).toBe(0);
+    expect(await prisma.set.count()).toBe(0);
+  });
+
+  it('activities/id (DELETE) delete another users activity', async () => {
+    const { exercise: exercise1, token: token1 } =
+      await seedUserWithExercise('test1@example.com');
+    const { token: token2 } = await seedUserWithExercise('test2@example.com');
+
+    const lift = await postLift(exercise1, token1);
+
+    await request(app.getHttpServer())
+      .delete(`/activities/${lift.body.id}`)
+      .set('Authorization', `Bearer ${token2}`)
+      .expect(404);
+
+    expect(await prisma.activity.count()).toBe(1);
   });
 
   afterAll(async () => {

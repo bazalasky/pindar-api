@@ -1,7 +1,7 @@
-import "dotenv/config";
-import bcrypt from "bcrypt";
-import { PrismaClient } from "../generated/prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
+import 'dotenv/config';
+import bcrypt from 'bcrypt';
+import { PrismaClient } from '../generated/prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
@@ -15,7 +15,7 @@ async function main() {
   const name = process.env.NAME;
 
   if (!email || !password || !name) {
-    throw new Error("Email, password, and name are required");
+    throw new Error('Email, password, and name are required');
   }
 
   // 2. Hash the password: await bcrypt.hash(password, saltRounds)
@@ -36,11 +36,14 @@ async function main() {
   });
   // 4. Log a success message that confirms the user was created
   //    (e.g. the email) — do NOT log the password or hash.
-    console.log(`User created successfully: ${email}`);
+  console.log(`User created successfully: ${email}`);
 }
 
 main()
-  .catch((e) => { console.error(e); process.exit(1); })
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  })
   .finally(async () => {
     await prisma.$disconnect();
   });
