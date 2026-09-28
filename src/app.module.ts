@@ -6,6 +6,7 @@ import { AuthModule } from './auth/auth.module';
 import { validate } from './config/env.validation';
 import { ConfigModule } from '@nestjs/config';
 import { ActivitiesModule } from './activities/activities.module';
+import { LoggerModule } from 'nestjs-pino';
 
 @Module({
   imports: [
@@ -15,6 +16,13 @@ import { ActivitiesModule } from './activities/activities.module';
     }),
     AuthModule,
     ActivitiesModule,
+    LoggerModule.forRoot({
+      pinoHttp: {
+        level: process.env.LOG_LEVEL ?? 'info',
+        redact: ['req.headers.authorization'],
+        transport: process.env.NODE_ENV === 'development' ? { target: 'pino-pretty' } : undefined,
+      },
+    })
   ],
   controllers: [AppController],
   providers: [

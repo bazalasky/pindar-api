@@ -457,7 +457,11 @@ describe('Activities (e2e)', () => {
       })
       .expect(404);
 
-    expect(await res.body.notes).toBe('felt good');
+    const oneRes = await request(app.getHttpServer())
+      .get(`/activities/${lift.body.id}`)
+      .expect(200);
+
+    expect(await oneRes.body.notes).toBe('felt good');
   });
 
   it('activities/lift (PATCH) editing run id on lift route returns 404', async () => {

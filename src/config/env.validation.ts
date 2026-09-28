@@ -1,5 +1,6 @@
 import { plainToInstance } from 'class-transformer';
 import {
+  IsEnum,
   IsNotEmpty,
   IsNumber,
   IsOptional,
@@ -10,6 +11,12 @@ import {
   MinLength,
   validateSync,
 } from 'class-validator';
+
+enum NodeEnv {
+  Development = 'development',
+  Production = 'production',
+  Test = 'test',
+}
 
 class EnvironmentVariables {
   @IsString()
@@ -27,6 +34,14 @@ class EnvironmentVariables {
   @Min(0)
   @Max(65535)
   PORT: number;
+
+  @IsOptional()
+  @IsEnum(NodeEnv)
+  NODE_ENV?: NodeEnv;
+
+  @IsOptional()
+  @IsString()
+  LOG_LEVEL?: string;
 }
 
 export function validate(config: Record<string, unknown>) {

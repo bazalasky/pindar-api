@@ -41,6 +41,7 @@ RUN --mount=type=cache,target=/root/.npm \
 FROM node:20-alpine AS runner
 
 ENV PATH=/app/node_modules/.bin:$PATH
+ENV NODE_ENV=production
 
 WORKDIR /app
 

@@ -138,6 +138,20 @@ Each of these has already cost real debugging time.
     `undefined`) silently disabled the exercise ownership check. `null` is different again - it
     means `IS NULL`. Any security filter built from a value that could be `undefined` needs that
     value guaranteed upstream.
+17. **`sslmode=require` in the Neon URLs is a pending silent downgrade.** `pg` prints a startup
+    warning: the modes `prefer`, `require` and `verify-ca` are currently treated as aliases for
+    `verify-full`, but in `pg` v9 / `pg-connection-string` v3 they adopt libpq semantics, which
+    are **weaker**. So a future `pg` upgrade quietly loosens TLS verification rather than
+    failing. Pre-empt it by writing `sslmode=verify-full` explicitly in `DATABASE_URL` for dev,
+    prod and `.env.test`. Note this warning goes to stderr directly and bypasses pino, so it
+    shows up as non-JSON lines in production logs.
+18. **`docker run --env-file .env` is not a stand-in for Render.** Docker does **not** strip
+    surrounding quotes from an env file; `dotenv` does. This project's `.env` values are
+    double-quoted, so `--env-file` delivers `DATABASE_URL` as `"postgresql://…` with a literal
+    leading quote, which fails the `@Matches(/^postgres/)` env check and crashes the container
+    with a misleading validation error. Render sets variables individually with no file
+    parsing, so this never happens there. To test an image locally, pass values with explicit
+    `-e` flags read through dotenv rather than `--env-file`.
 16. **Never import `describe`/`it`/`expect` from `node:test`.** They are jest globals already in
     scope; an editor auto-import silently swaps the test runner. Symptom seen 2026-09-20: jest
     reports "Your test suite must contain at least one test" while a `node:test`-formatted
