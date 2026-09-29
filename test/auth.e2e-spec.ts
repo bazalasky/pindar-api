@@ -1,35 +1,30 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
-import { AppModule } from './../src/app.module';
-import { resetDb } from './reset-db';
 import { PrismaService } from '../src/prisma/prisma.service';
+import { createTestApp } from './helpers';
+import { resetDb } from './reset-db';
 
 describe('Auth (e2e)', () => {
   let app: INestApplication<App>;
+  let prisma: PrismaService;
 
   beforeAll(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
-
-    app = moduleFixture.createNestApplication();
-    await app.init();
+    ({ app, prisma } = await createTestApp());
   });
 
   beforeEach(async () => {
-    await resetDb(app.get(PrismaService));
+    await resetDb(prisma);
   });
 
-  it('/auth/login (POST)', () => {
+  it('rejects an unknown user with 401', () => {
     return request(app.getHttpServer())
       .post('/auth/login')
       .send({ email: 'nobody@example.invalid', password: 'wrong' })
       .expect(401);
   });
 
-  it('/auth/login (POST)', () => {
+  it('rejects an empty body with 400', () => {
     return request(app.getHttpServer())
       .post('/auth/login')
       .send({})
@@ -37,12 +32,6 @@ describe('Auth (e2e)', () => {
   });
 
   describe('test harness', () => {
-    let prisma: PrismaService;
-
-    beforeAll(() => {
-      prisma = app.get(PrismaService);
-    });
-
     it('starts each test with an empty database', async () => {
       expect(await prisma.user.count()).toBe(0);
     });

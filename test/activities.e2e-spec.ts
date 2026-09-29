@@ -1,47 +1,21 @@
 import { INestApplication } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
-import { AppModule } from '../src/app.module';
 import { App } from 'supertest/types';
 import { resetDb } from './reset-db';
 import { PrismaService } from '../src/prisma/prisma.service';
 import request from 'supertest';
-import { JwtService } from '@nestjs/jwt';
+import { createTestApp, seedUserWithExercise } from './helpers';
 
 describe('Activities (e2e)', () => {
   let app: INestApplication<App>;
   let prisma: PrismaService;
 
   beforeAll(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
-
-    app = moduleFixture.createNestApplication();
-    await app.init();
-    prisma = app.get(PrismaService);
+    ({ app, prisma } = await createTestApp());
   });
 
   beforeEach(async () => {
     await resetDb(prisma);
   });
-
-  async function seedUserWithExercise(email = 'test@example.com') {
-    const user = await prisma.user.create({
-      data: {
-        name: 'Test User',
-        email: email,
-        password: 'password123',
-      },
-    });
-
-    const exercise = await prisma.exercise.create({
-      data: { name: 'Bench Press', userId: user.id },
-    });
-
-    const token = app.get(JwtService).sign({ sub: user.id });
-
-    return { user, exercise, token };
-  }
 
   async function postLift(exercise: { id: number }, token: string) {
     return await request(app.getHttpServer())
@@ -73,7 +47,7 @@ describe('Activities (e2e)', () => {
   }
 
   it('/activities/lift (POST)', async () => {
-    const { exercise, token } = await seedUserWithExercise();
+    const { exercise, token } = await seedUserWithExercise(prisma, app);
 
     await request(app.getHttpServer())
       .post('/activities/lift')
@@ -101,7 +75,7 @@ describe('Activities (e2e)', () => {
   });
 
   it('/activities/run (POST)', async () => {
-    const { token } = await seedUserWithExercise();
+    const { token } = await seedUserWithExercise(prisma, app);
 
     const res = await request(app.getHttpServer())
       .post('/activities/run')
@@ -124,7 +98,7 @@ describe('Activities (e2e)', () => {
   });
 
   it('/activities/run /activities/lift (POST) create both', async () => {
-    const { exercise, token } = await seedUserWithExercise();
+    const { exercise, token } = await seedUserWithExercise(prisma, app);
 
     await request(app.getHttpServer())
       .post('/activities/lift')
@@ -176,7 +150,7 @@ describe('Activities (e2e)', () => {
   });
 
   it('/activities/run (POST) with empty optionals', async () => {
-    const { token } = await seedUserWithExercise();
+    const { token } = await seedUserWithExercise(prisma, app);
 
     const res = await request(app.getHttpServer())
       .post('/activities/run')
@@ -195,7 +169,7 @@ describe('Activities (e2e)', () => {
   });
 
   it('/activities/lift (POST) with missing auth', async () => {
-    const { exercise } = await seedUserWithExercise();
+    const { exercise } = await seedUserWithExercise(prisma, app);
 
     await request(app.getHttpServer())
       .post('/activities/lift')
@@ -230,7 +204,7 @@ describe('Activities (e2e)', () => {
   });
 
   it('/activities/run (POST) invalid field', async () => {
-    const { token } = await seedUserWithExercise();
+    const { token } = await seedUserWithExercise(prisma, app);
 
     await request(app.getHttpServer())
       .post('/activities/run')
@@ -248,7 +222,7 @@ describe('Activities (e2e)', () => {
   });
 
   it('/activities (GET) create activity', async () => {
-    const { exercise, token } = await seedUserWithExercise();
+    const { exercise, token } = await seedUserWithExercise(prisma, app);
 
     const res = await request(app.getHttpServer())
       .post('/activities/lift')
@@ -286,7 +260,7 @@ describe('Activities (e2e)', () => {
   });
 
   it('/activities/lift (POST) with invalid userId', async () => {
-    const { exercise, token } = await seedUserWithExercise();
+    const { exercise, token } = await seedUserWithExercise(prisma, app);
 
     await request(app.getHttpServer())
       .post('/activities/lift')
@@ -311,7 +285,7 @@ describe('Activities (e2e)', () => {
   });
 
   it('/activities/lift (POST) with invalid data', async () => {
-    const { exercise, token } = await seedUserWithExercise();
+    const { exercise, token } = await seedUserWithExercise(prisma, app);
 
     await request(app.getHttpServer())
       .post('/activities/lift')
@@ -335,9 +309,16 @@ describe('Activities (e2e)', () => {
   });
 
   it('/activities/lift (POST) another users exercise is rejected', async () => {
-    const { token: token1 } = await seedUserWithExercise('test1@example.com');
-    const { exercise: exercise2 } =
-      await seedUserWithExercise('test2@example.com');
+    const { token: token1 } = await seedUserWithExercise(
+      prisma,
+      app,
+      'test1@example.com',
+    );
+    const { exercise: exercise2 } = await seedUserWithExercise(
+      prisma,
+      app,
+      'test2@example.com',
+    );
 
     await request(app.getHttpServer())
       .post('/activities/lift')
@@ -365,7 +346,7 @@ describe('Activities (e2e)', () => {
   });
 
   it('/activities/lift (POST) rejected request persists no data', async () => {
-    const { exercise, token } = await seedUserWithExercise();
+    const { exercise, token } = await seedUserWithExercise(prisma, app);
 
     await request(app.getHttpServer())
       .post('/activities/lift')
@@ -400,7 +381,7 @@ describe('Activities (e2e)', () => {
   });
 
   it('activities/lift (PATCH) omitting sets leaves them intact', async () => {
-    const { exercise, token } = await seedUserWithExercise();
+    const { exercise, token } = await seedUserWithExercise(prisma, app);
 
     const lift = await postLift(exercise, token);
 
@@ -417,7 +398,7 @@ describe('Activities (e2e)', () => {
   });
 
   it('activities/lift (PATCH) including sets replaces them', async () => {
-    const { exercise, token } = await seedUserWithExercise();
+    const { exercise, token } = await seedUserWithExercise(prisma, app);
 
     const lift = await postLift(exercise, token);
 
@@ -443,9 +424,16 @@ describe('Activities (e2e)', () => {
   });
 
   it('activities/lift (PATCH) editing another users activity returns 404', async () => {
-    const { exercise: exercise1, token: token1 } =
-      await seedUserWithExercise('test1@example.com');
-    const { token: token2 } = await seedUserWithExercise('test2@example.com');
+    const { exercise: exercise1, token: token1 } = await seedUserWithExercise(
+      prisma,
+      app,
+      'test1@example.com',
+    );
+    const { token: token2 } = await seedUserWithExercise(
+      prisma,
+      app,
+      'test2@example.com',
+    );
 
     const lift = await postLift(exercise1, token1);
 
@@ -465,7 +453,7 @@ describe('Activities (e2e)', () => {
   });
 
   it('activities/lift (PATCH) editing run id on lift route returns 404', async () => {
-    const { token } = await seedUserWithExercise();
+    const { token } = await seedUserWithExercise(prisma, app);
 
     const run = await request(app.getHttpServer())
       .post('/activities/run')
@@ -488,7 +476,7 @@ describe('Activities (e2e)', () => {
   });
 
   it('activities/id (DELETE) delete activity', async () => {
-    const { exercise, token } = await seedUserWithExercise();
+    const { exercise, token } = await seedUserWithExercise(prisma, app);
 
     const lift = await postLift(exercise, token);
 
@@ -503,9 +491,16 @@ describe('Activities (e2e)', () => {
   });
 
   it('activities/id (DELETE) delete another users activity', async () => {
-    const { exercise: exercise1, token: token1 } =
-      await seedUserWithExercise('test1@example.com');
-    const { token: token2 } = await seedUserWithExercise('test2@example.com');
+    const { exercise: exercise1, token: token1 } = await seedUserWithExercise(
+      prisma,
+      app,
+      'test1@example.com',
+    );
+    const { token: token2 } = await seedUserWithExercise(
+      prisma,
+      app,
+      'test2@example.com',
+    );
 
     const lift = await postLift(exercise1, token1);
 

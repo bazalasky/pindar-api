@@ -7,6 +7,7 @@ import { validate } from './config/env.validation';
 import { ConfigModule } from '@nestjs/config';
 import { ActivitiesModule } from './activities/activities.module';
 import { LoggerModule } from 'nestjs-pino';
+import { ExercisesModule } from './exercises/exercises.module';
 
 @Module({
   imports: [
@@ -20,9 +21,13 @@ import { LoggerModule } from 'nestjs-pino';
       pinoHttp: {
         level: process.env.LOG_LEVEL ?? 'info',
         redact: ['req.headers.authorization'],
-        transport: process.env.NODE_ENV === 'development' ? { target: 'pino-pretty' } : undefined,
+        transport:
+          process.env.NODE_ENV === 'development'
+            ? { target: 'pino-pretty' }
+            : undefined,
       },
-    })
+    }),
+    ExercisesModule,
   ],
   controllers: [AppController],
   providers: [
