@@ -19,6 +19,6 @@ export class AuthService {
     if (!isMatch) {
       throw new UnauthorizedException('Invalid credentials');
     }
-    return this.jwtService.sign({ sub: user.id });
+    return { access_token: this.jwtService.sign({ sub: user.id }) };
   }
 }
