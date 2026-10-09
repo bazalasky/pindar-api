@@ -33,21 +33,21 @@ describe('Auth (e2e)', () => {
   });
 
   it('can login with valid credentials', async () => {
-      await prisma.user.create({
-        data: {
-          name: 'Test User',
-          email: 'test@test.com',
-          password: await bcrypt.hash('somepassword', 10),
-        },
-      });
-
-      const res = await request(app.getHttpServer())
-        .post('/auth/login')
-        .send({ email: 'test@test.com', password: 'somepassword' })
-        .expect(200)
-
-      expect(res.body.access_token).toMatch(/^eyJ[\w-]+\.[\w-]+\.[\w-]+$/);
+    await prisma.user.create({
+      data: {
+        name: 'Test User',
+        email: 'test@test.com',
+        password: await bcrypt.hash('somepassword', 10),
+      },
     });
+
+    const res = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({ email: 'test@test.com', password: 'somepassword' })
+      .expect(200);
+
+    expect(res.body.access_token).toMatch(/^eyJ[\w-]+\.[\w-]+\.[\w-]+$/);
+  });
 
   describe('test harness', () => {
     it('starts each test with an empty database', async () => {

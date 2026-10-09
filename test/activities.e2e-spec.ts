@@ -136,6 +136,7 @@ describe('Activities (e2e)', () => {
 
     const res = await request(app.getHttpServer())
       .get('/activities')
+      .set('Authorization', `Bearer ${token}`)
       .expect(200);
 
     expect(res.body).toHaveLength(2);
@@ -221,6 +222,27 @@ describe('Activities (e2e)', () => {
       .expect(400);
   });
 
+  it('/activities (GET) with missing auth', async () => {
+    await request(app.getHttpServer()).get('/activities').expect(401);
+  });
+
+  it('/activities/:id (GET) with missing auth', async () => {
+    const { token } = await seedUserWithExercise(prisma, app);
+
+    const res = await request(app.getHttpServer())
+      .post('/activities/run')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        date: '2026-09-18',
+        durationSeconds: 1800,
+        notes: 'felt good',
+        bodyweight: '180.5',
+      })
+      .expect(201);
+
+    await request(app.getHttpServer()).get(`/activities/${res.body.id}`).expect(401);
+  });
+
   it('/activities (GET) create activity', async () => {
     const { exercise, token } = await seedUserWithExercise(prisma, app);
 
@@ -246,17 +268,130 @@ describe('Activities (e2e)', () => {
 
     const listRes = await request(app.getHttpServer())
       .get('/activities')
+      .set('Authorization', `Bearer ${token}`)
       .expect(200);
     expect(listRes.body).toHaveLength(1);
 
     const oneRes = await request(app.getHttpServer())
       .get(`/activities/${res.body.id}`)
+      .set('Authorization', `Bearer ${token}`)
       .expect(200);
     expect(oneRes.body.id).toBe(res.body.id);
   });
 
   it('/activities (GET) invalid id', async () => {
-    await request(app.getHttpServer()).get('/activities/999999').expect(404);
+    const { token } = await seedUserWithExercise(prisma, app);
+
+    await request(app.getHttpServer())
+      .get('/activities/999999')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(404);
+  });
+
+  it('/activities (GET) only users own activities are returned', async () => {
+    const {
+      user: user1,
+      exercise: exercise1,
+      token: token1,
+    } = await seedUserWithExercise(prisma, app, 'test1@example.com');
+    const {
+      user: user2,
+      exercise: exercise2,
+      token: token2,
+    } = await seedUserWithExercise(prisma, app, 'test2@example.com');
+
+    const res1 = await request(app.getHttpServer())
+      .post('/activities/lift')
+      .set('Authorization', `Bearer ${token1}`)
+      .send({
+        date: '2026-09-18',
+        durationSeconds: 3600,
+        notes: 'felt good',
+        bodyweight: '180.5',
+        sets: [
+          {
+            exerciseId: exercise1.id,
+            setNumber: 1,
+            reps: 5,
+            weight: '225.5',
+            rpe: '8.5',
+          },
+        ],
+      })
+      .expect(201);
+
+    const res2 = await request(app.getHttpServer())
+      .post('/activities/lift')
+      .set('Authorization', `Bearer ${token2}`)
+      .send({
+        date: '2026-09-18',
+        durationSeconds: 3600,
+        notes: 'felt good',
+        bodyweight: '180.5',
+        sets: [
+          {
+            exerciseId: exercise2.id,
+            setNumber: 1,
+            reps: 5,
+            weight: '225.5',
+            rpe: '8.5',
+          },
+        ],
+      })
+      .expect(201);
+
+    const listRes1 = await request(app.getHttpServer())
+      .get(`/activities`)
+      .set('Authorization', `Bearer ${token1}`)
+      .expect(200);
+    expect(listRes1.body).toHaveLength(1);
+    expect(listRes1.body[0].id).toBe(res1.body.id);
+
+    const listRes2 = await request(app.getHttpServer())
+      .get(`/activities`)
+      .set('Authorization', `Bearer ${token2}`)
+      .expect(200);
+    expect(listRes2.body).toHaveLength(1);
+    expect(listRes2.body[0].id).toBe(res2.body.id);
+  });
+
+  it('/activities (GET) another users activities are not returned', async () => {
+    const {
+      user: user1,
+      exercise: exercise1,
+      token: token1,
+    } = await seedUserWithExercise(prisma, app, 'test1@example.com');
+    const { token: token2 } = await seedUserWithExercise(
+      prisma,
+      app,
+      'test2@example.com',
+    );
+
+    const res = await request(app.getHttpServer())
+      .post('/activities/lift')
+      .set('Authorization', `Bearer ${token1}`)
+      .send({
+        date: '2026-09-18',
+        durationSeconds: 3600,
+        notes: 'felt good',
+        bodyweight: '180.5',
+        sets: [
+          {
+            exerciseId: exercise1.id,
+            setNumber: 1,
+            reps: 5,
+            weight: '225.5',
+            rpe: '8.5',
+          },
+        ],
+      })
+      .expect(201);
+
+    const listRes2 = await request(app.getHttpServer())
+      .get(`/activities/${res.body.id}`)
+      .set('Authorization', `Bearer ${token2}`)
+      .expect(404);
+    expect(listRes2.body.id).toBeUndefined();
   });
 
   it('/activities/lift (POST) with invalid userId', async () => {
@@ -447,6 +582,7 @@ describe('Activities (e2e)', () => {
 
     const oneRes = await request(app.getHttpServer())
       .get(`/activities/${lift.body.id}`)
+      .set('Authorization', `Bearer ${token1}`)
       .expect(200);
 
     expect(await oneRes.body.notes).toBe('felt good');

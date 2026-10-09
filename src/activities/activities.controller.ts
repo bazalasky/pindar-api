@@ -50,13 +50,20 @@ export class ActivitiesController {
   }
 
   @Get()
-  async findAll() {
-    return this.activitiesService.findAll();
+  @UseGuards(AuthGuard('jwt'))
+  async findAll(@Req() req: AuthenticatedRequest) {
+    const userId = req.user.userId;
+    return this.activitiesService.findAll(userId);
   }
 
   @Get(':id')
-  async findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.activitiesService.findOne(id);
+  @UseGuards(AuthGuard('jwt'))
+  async findOne(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    const userId = req.user.userId;
+    return this.activitiesService.findOne(id, userId);
   }
 
   @Patch('lift/:id')

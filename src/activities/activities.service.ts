@@ -83,17 +83,18 @@ export class ActivitiesService {
     });
   }
 
-  async findAll() {
+  async findAll(userId: number) {
     const activities = await this.prisma.activity.findMany({
+      where: { userId },
       include: ACTIVITY_INCLUDE,
       orderBy: [{ date: 'desc' }, { id: 'desc' }],
     });
     return activities;
   }
 
-  async findOne(id: number) {
-    const activity = await this.prisma.activity.findUnique({
-      where: { id },
+  async findOne(id: number, userId: number) {
+    const activity = await this.prisma.activity.findFirst({
+      where: { id, userId },
       include: ACTIVITY_INCLUDE,
     });
     if (!activity) {
