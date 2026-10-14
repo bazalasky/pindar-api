@@ -240,7 +240,9 @@ describe('Activities (e2e)', () => {
       })
       .expect(201);
 
-    await request(app.getHttpServer()).get(`/activities/${res.body.id}`).expect(401);
+    await request(app.getHttpServer())
+      .get(`/activities/${res.body.id}`)
+      .expect(401);
   });
 
   it('/activities (GET) create activity', async () => {
@@ -289,16 +291,16 @@ describe('Activities (e2e)', () => {
   });
 
   it('/activities (GET) only users own activities are returned', async () => {
-    const {
-      user: user1,
-      exercise: exercise1,
-      token: token1,
-    } = await seedUserWithExercise(prisma, app, 'test1@example.com');
-    const {
-      user: user2,
-      exercise: exercise2,
-      token: token2,
-    } = await seedUserWithExercise(prisma, app, 'test2@example.com');
+    const { exercise: exercise1, token: token1 } = await seedUserWithExercise(
+      prisma,
+      app,
+      'test1@example.com',
+    );
+    const { exercise: exercise2, token: token2 } = await seedUserWithExercise(
+      prisma,
+      app,
+      'test2@example.com',
+    );
 
     const res1 = await request(app.getHttpServer())
       .post('/activities/lift')
@@ -356,11 +358,11 @@ describe('Activities (e2e)', () => {
   });
 
   it('/activities (GET) another users activities are not returned', async () => {
-    const {
-      user: user1,
-      exercise: exercise1,
-      token: token1,
-    } = await seedUserWithExercise(prisma, app, 'test1@example.com');
+    const { exercise: exercise1, token: token1 } = await seedUserWithExercise(
+      prisma,
+      app,
+      'test1@example.com',
+    );
     const { token: token2 } = await seedUserWithExercise(
       prisma,
       app,
@@ -572,7 +574,7 @@ describe('Activities (e2e)', () => {
 
     const lift = await postLift(exercise1, token1);
 
-    const res = await request(app.getHttpServer())
+    await request(app.getHttpServer())
       .patch(`/activities/lift/${lift.body.id}`)
       .set('Authorization', `Bearer ${token2}`)
       .send({

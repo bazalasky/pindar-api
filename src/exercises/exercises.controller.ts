@@ -2,13 +2,7 @@ import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ExercisesService } from './exercises.service';
 import { CreateExerciseDto } from './dto/create-exercise.dto';
-import { Request } from 'express';
-
-interface AuthenticatedRequest extends Request {
-  user: {
-    userId: number;
-  };
-}
+import type { AuthenticatedRequest } from '../auth/authenticated-request';
 
 @Controller('exercises')
 export class ExercisesController {

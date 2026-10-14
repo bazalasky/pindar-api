@@ -15,15 +15,9 @@ import { ActivitiesService } from './activities.service';
 import { CreateLiftActivityDto } from './dto/create-lift-activity.dto';
 import { CreateRunActivityDto } from './dto/create-run-activity.dto';
 import { AuthGuard } from '@nestjs/passport';
-import { Request } from 'express';
 import { UpdateLiftActivityDto } from './dto/update-lift-activity.dto';
 import { UpdateRunActivityDto } from './dto/update-run-activity.dto';
-
-interface AuthenticatedRequest extends Request {
-  user: {
-    userId: number;
-  };
-}
+import type { AuthenticatedRequest } from '../auth/authenticated-request';
 
 @Controller('activities')
 export class ActivitiesController {

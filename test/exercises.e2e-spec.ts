@@ -62,6 +62,21 @@ describe('Exercise (e2e)', () => {
     expect(await prisma.exercise.count()).toBe(1);
   });
 
+  it.each([[{}], [{ name: 5 }], [{ name: null }]])(
+    '/exercises (POST) non-string name %j returns 400 and creates no row',
+    async (body) => {
+      const { token } = await seedUserWithExercise(prisma, app);
+
+      await request(app.getHttpServer())
+        .post('/exercises')
+        .set('Authorization', `Bearer ${token}`)
+        .send(body)
+        .expect(400);
+
+      expect(await prisma.exercise.count()).toBe(1);
+    },
+  );
+
   it('/exercises (POST) create new exercise', async () => {
     const { user, token } = await seedUserWithExercise(prisma, app);
 

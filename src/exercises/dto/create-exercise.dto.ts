@@ -4,6 +4,11 @@ import { IsNotEmpty, IsString } from 'class-validator';
 export class CreateExerciseDto {
   @IsString()
   @IsNotEmpty()
-  @Transform(({ value }) => value.trim())
+  @Transform(({ value }: { value: unknown }) => {
+    if (typeof value === 'string') {
+      return value.trim();
+    }
+    return value;
+  })
   name!: string;
 }
