@@ -141,8 +141,12 @@ describe('Activities (e2e)', () => {
 
     expect(res.body).toHaveLength(2);
 
-    const lift = res.body.find((a) => a.activityType === 'Lift');
-    const run = res.body.find((a) => a.activityType === 'Run');
+    const lift = res.body.find(
+      (a: { activityType: string }) => a.activityType === 'Lift',
+    );
+    const run = res.body.find(
+      (a: { activityType: string }) => a.activityType === 'Run',
+    );
 
     expect(lift.liftActivity).not.toBeNull();
     expect(lift.runActivity).toBeNull();

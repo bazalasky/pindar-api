@@ -33,7 +33,7 @@ class EnvironmentVariables {
   @IsNumber()
   @Min(0)
   @Max(65535)
-  PORT: number;
+  PORT?: number;
 
   @IsOptional()
   @IsEnum(NodeEnv)
