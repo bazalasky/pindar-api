@@ -1,0 +1,42 @@
+name: Backend CI
+run-name: CI
+permissions:
+  contents: read
+on: 
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  static:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+    - uses: actions/checkout@v7
+    - uses: actions/setup-node@v7
+      with:
+        node-version: 20
+        cache: 'npm'
+    - run: npm ci
+    - run: npx prisma generate
+    - run: npx eslint src test
+    - run: npx tsc --noEmit
+  db:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+    - uses: actions/checkout@v7
+    - uses: actions/setup-node@v7
+      with:
+        node-version: 20
+        cache: 'npm'
+    - run: npm ci
+    - run: docker compose up -d --wait
+    - run: npx prisma generate
+    - run: npm run db:drift
+    - run: npm run test:e2e

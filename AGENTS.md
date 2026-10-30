@@ -30,9 +30,16 @@ npm run lint                   # eslint --fix
 npx prisma validate            # run after every schema edit
 npx prisma migrate dev --name <name>
 npx prisma migrate deploy      # replays migration files; use for test DB and CI
+npm run db:drift               # exit 0 = schema.prisma matches migrations, 2 = drift, 1 = error
 ```
 
 Anything reading `.env` is cwd-sensitive - run it from this directory.
+
+`db:drift` replays the migrations into a **shadow database** (`pindar_shadow`, created by
+`docker/init-shadow.sql` on the test container's first start; URL in `.env.test` as
+`SHADOW_DATABASE_URL`). Prisma wipes it every run, so never point it at a real database.
+Existing container without it: `docker compose down -v && docker compose up -d --wait`.
+It checks files against schema only - not any live database, and not edited old migrations.
 
 ## Architecture
 

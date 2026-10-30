@@ -15,3 +15,5 @@ services:
       timeout: 5s
       retries: 5
     container_name: pindar-testing-db
+    volumes:
+      - ./docker/init-shadow.sql:/docker-entrypoint-initdb.d/init-shadow.sql
