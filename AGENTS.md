@@ -17,6 +17,13 @@ and confirm.
 **Verify before trusting.** Read the actual file, run the actual command. Nearly every real bug
 here surfaced by running code, not reading it.
 
+## CI
+
+`.github/workflows/ci.yml`: push/PR to `main` -> `static` (generate, eslint, tsc) and `db`
+(compose up, `db:drift`, `test:e2e`) in parallel, Node 20. The Node version must match the
+Dockerfile's `FROM node:20-alpine` - change both together. CI uses `docker compose`, not a
+service container (see ROADMAP Phase 3).
+
 ## Commands
 
 ```bash
