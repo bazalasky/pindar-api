@@ -8,6 +8,7 @@ import { ConfigModule } from '@nestjs/config';
 import { ActivitiesModule } from './activities/activities.module';
 import { LoggerModule } from 'nestjs-pino';
 import { ExercisesModule } from './exercises/exercises.module';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { ExercisesModule } from './exercises/exercises.module';
       },
     }),
     ExercisesModule,
+    HealthModule,
   ],
   controllers: [AppController],
   providers: [
